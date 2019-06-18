@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+service HostnamePodService {
+  rpc GetPodHostname(Empty) returns (PodHostnameResponse) {}
+}
+message PodHostnameResponse {
+  string name = 1;
+}
+message Empty {}

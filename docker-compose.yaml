@@ -1,0 +1,15 @@
+version: '3'
+services:
+  proxy:
+    build:
+      context: ./proxy
+      dockerfile: Dockerfile
+    networks:
+      - envoymesh
+    ports:
+      - '8000:8000'
+
+  grpc-server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
