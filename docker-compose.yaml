@@ -1,11 +1,9 @@
-version: '3'
+version: '3.7'
 services:
   proxy:
     build:
       context: ./proxy
       dockerfile: Dockerfile
-    networks:
-      - envoymesh
     ports:
       - '8000:8000'
 

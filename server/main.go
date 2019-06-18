@@ -10,6 +10,9 @@ import (
 	pb "github.com/zerobase-xyz/go-grpc-sample/pb"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	health "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -18,28 +21,37 @@ var (
 
 type HostnameService struct{}
 
-func factorize(number int, c chan<- []int) {
+func RegisterHeathCheck(s *grpc.Server) {
+	health.RegisterHealthServer(s, &healthServer{})
+}
+
+type healthServer struct{}
+
+func (h *healthServer) Check(context.Context, *health.HealthCheckRequest) (*health.HealthCheckResponse, error) {
+	return &health.HealthCheckResponse{
+		Status: health.HealthCheckResponse_SERVING,
+	}, nil
+}
+
+func (h *healthServer) Watch(*health.HealthCheckRequest, health.Health_WatchServer) error {
+	return status.Error(codes.Unimplemented, "service watch is not implemented current version.")
+}
+
+func factorize(number int) {
 	var a []int
 	for i := 1; i < number+1; i++ {
 		if number%i == 0 {
 			a = append(a, i)
 		}
-		c <- a
 	}
-	close(c)
 }
 
 func (s *HostnameService) GetPodHostname(ctx context.Context, in *pb.Empty) (*pb.PodHostnameResponse, error) {
 	name, _ := os.Hostname()
-	//number := rand.Intn(999999) + 1000000
-	//c := make(chan []int)
-	//go factorize(number, c)
+	number := 9999999
+	factorize(number)
 
 	fmt.Printf("%v\n", name)
-	//for i := range c {
-	//	fmt.Printf("result: %d\n", i)
-	//}
-
 	return &pb.PodHostnameResponse{
 		Name: name,
 	}, nil
