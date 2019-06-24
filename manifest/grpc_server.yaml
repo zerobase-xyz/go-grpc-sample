@@ -1,0 +1,100 @@
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: grpc-server
+  namespace: simple-api
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - hosts:
+        - grpc-server.poc.dmmga.me
+      port:
+        name: https
+        number: 443
+        protocol: HTTP
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: grpc-server
+  namespace: simple-api
+spec:
+  gateways:
+    - grpc-server.simple-api.svc.cluster.local
+  hosts:
+    - grpc-server.poc.dmmga.me
+  http:
+    - route:
+        - destination:
+            host: grpc-proxy.simple-api.svc.cluster.local
+            port:
+              number: 8080
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: grpc-server
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: grpc-server
+    spec:
+      containers:
+        - name: grpc-server
+          image: 102406900280.dkr.ecr.ap-northeast-1.amazonaws.com/sumi-poc-go-grpc-server
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            exec:
+              command: ['/bin/grpc_health_probe', '-addr=:8080']
+            periodSeconds: 30
+            initialDelaySeconds: 10
+          ports:
+            - containerPort: 8080
+              name: grpc
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 2000Mi
+            requests:
+              cpu: 1000m
+              memory: 2000Mi
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+  name: grpc-server
+spec:
+  ports:
+    - name: grpc-backend
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: grpc-server
+  type: ClusterIP
+
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: grpc-server
+spec:
+  maxReplicas: 10
+  minReplicas: 2
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: grpc-server
+  targetCPUUtilizationPercentage: 50

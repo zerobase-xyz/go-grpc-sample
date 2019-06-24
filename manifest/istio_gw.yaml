@@ -1,0 +1,69 @@
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: nginx-service
+  namespace: use-istio-ingressgw
+spec:
+  gateways:
+    - nginx-service.use-istio-ingressgw.svc.cluster.local
+  hosts:
+    - 'nginx-use-istio-ingressgw.poc.dmmga.me'
+  http:
+    - route:
+        - destination:
+            host: nginx-service.use-istio-ingressgw.svc.cluster.local
+            port:
+              number: 8000
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: nginx-service
+  namespace: use-istio-ingressgw
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 443
+        name: https
+        protocol: HTTP
+      hosts:
+        - 'nginx-use-istio-ingressgw.poc.dmmga.me'
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: grpc-proxy
+  namespace: use-istio-ingressgw
+spec:
+  gateways:
+    - grpc-proxy.use-istio-ingressgw.svc.cluster.local
+  hosts:
+    - 'use-istio-ingressgw.poc.dmmga.me'
+  http:
+    - route:
+        - destination:
+            host: grpc-proxy.use-istio-ingressgw.svc.cluster.local
+            port:
+              number: 8000
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: grpc-proxy
+  namespace: use-istio-ingressgw
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 443
+        name: https
+        protocol: HTTP
+      hosts:
+        - 'use-istio-ingressgw.poc.dmmga.me'

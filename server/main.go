@@ -21,10 +21,6 @@ var (
 
 type HostnameService struct{}
 
-func RegisterHeathCheck(s *grpc.Server) {
-	health.RegisterHealthServer(s, &healthServer{})
-}
-
 type healthServer struct{}
 
 func (h *healthServer) Check(context.Context, *health.HealthCheckRequest) (*health.HealthCheckResponse, error) {
@@ -48,7 +44,7 @@ func factorize(number int) {
 
 func (s *HostnameService) GetPodHostname(ctx context.Context, in *pb.Empty) (*pb.PodHostnameResponse, error) {
 	name, _ := os.Hostname()
-	number := 9999999
+	number := 10
 	factorize(number)
 
 	fmt.Printf("%v\n", name)
@@ -65,5 +61,6 @@ func main() {
 	server := grpc.NewServer()
 	HostnameService := &HostnameService{}
 	pb.RegisterHostnamePodServiceServer(server, HostnameService)
+	health.RegisterHealthServer(server, &healthServer{})
 	server.Serve(listenPort)
 }

@@ -1,0 +1,205 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: nginx-service
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: nginx-service
+    spec:
+      containers:
+        - name: nginx-service
+          image: nginx:latest
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /
+              port: 80
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          ports:
+            - containerPort: 80
+              name: http
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 500m
+              memory: 1000Mi
+            requests:
+              cpu: 500m
+              memory: 1000Mi
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+  name: nginx-service
+spec:
+  ports:
+    - name: http
+      port: 8000
+      protocol: TCP
+      targetPort: 80
+  selector:
+    app: nginx-service
+  type: ClusterIP
+
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: nginx-service
+spec:
+  maxReplicas: 10
+  minReplicas: 2
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: nginx-service
+  targetCPUUtilizationPercentage: 50
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: grpc-proxy
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: grpc-proxy
+    spec:
+      containers:
+        - name: grpc-proxy
+          image: 102406900280.dkr.ecr.ap-northeast-1.amazonaws.com/sumi-poc-go-grpc-proxy
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthcheck
+              port: 8000
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          ports:
+            - containerPort: 8000
+              name: http
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 2000Mi
+            requests:
+              cpu: 1000m
+              memory: 2000Mi
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+  name: grpc-proxy
+spec:
+  ports:
+    - name: http
+      port: 8000
+      protocol: TCP
+      targetPort: 8000
+  selector:
+    app: grpc-proxy
+  type: ClusterIP
+
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: grpc-proxy
+spec:
+  maxReplicas: 10
+  minReplicas: 3
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: grpc-proxy
+  targetCPUUtilizationPercentage: 50
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: grpc-server
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 4
+  template:
+    metadata:
+      labels:
+        app: grpc-server
+    spec:
+      containers:
+        - name: grpc-server
+          image: 102406900280.dkr.ecr.ap-northeast-1.amazonaws.com/sumi-poc-go-grpc-server
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            exec:
+              command: ['/bin/grpc_health_probe', '-addr=:8080']
+            periodSeconds: 30
+            initialDelaySeconds: 10
+          ports:
+            - containerPort: 8080
+              name: grpc
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 2000Mi
+            requests:
+              cpu: 1000m
+              memory: 2000Mi
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+  name: grpc-server
+spec:
+  ports:
+    - name: grpc-backend
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: grpc-server
+  type: ClusterIP
+
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: grpc-server
+spec:
+  maxReplicas: 10
+  minReplicas: 4
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: grpc-server
+  targetCPUUtilizationPercentage: 50

@@ -1,0 +1,81 @@
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: 'alb-ingress'
+  namespace: 'not-inject-envoy'
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-northeast-1:102406900280:certificate/c837a43c-3204-4640-abe8-4e34b76b19df
+    alb.ingress.kubernetes.io/subnets: subnet-04926345af49f9a4a,subnet-0a311365ab883b94f
+    alb.ingress.kubernetes.io/security-groups: sg-0062238904c893e80
+
+spec:
+  rules:
+    - host: 'not-inject-envoy.poc.dmmga.me'
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: nginx-service
+              servicePort: 8000
+          - path: /hostname
+            backend:
+              serviceName: grpc-proxy
+              servicePort: 8000
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: 'alb-ingress'
+  namespace: 'inject-envoy'
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-northeast-1:102406900280:certificate/c837a43c-3204-4640-abe8-4e34b76b19df
+    alb.ingress.kubernetes.io/subnets: subnet-04926345af49f9a4a,subnet-0a311365ab883b94f
+    alb.ingress.kubernetes.io/security-groups: sg-0062238904c893e80
+
+spec:
+  rules:
+    - host: 'inject-envoy.poc.dmmga.me'
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: nginx-service
+              servicePort: 8000
+          - path: /hostname
+            backend:
+              serviceName: grpc-proxy
+              servicePort: 8000
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: 'istio-ingress'
+  namespace: 'istio-system'
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-northeast-1:102406900280:certificate/c837a43c-3204-4640-abe8-4e34b76b19df
+    alb.ingress.kubernetes.io/subnets: subnet-04926345af49f9a4a,subnet-0a311365ab883b94f
+    alb.ingress.kubernetes.io/security-groups: sg-0062238904c893e80
+
+spec:
+  rules:
+    - host: 'use-istio-ingressgw.poc.dmmga.me'
+      http:
+        paths:
+          - backend:
+              serviceName: 'istio-ingressgateway'
+              servicePort: 443
+    - host: 'nginx-use-istio-ingressgw.poc.dmmga.me'
+      http:
+        paths:
+          - backend:
+              serviceName: 'istio-ingressgateway'
+              servicePort: 443

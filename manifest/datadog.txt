@@ -1,0 +1,78 @@
+  - name: not-inject-envoy-nginx
+    url: https://not-inject-envoy.poc.dmmga.me/
+    check_certificate_expiration: true
+    days_warning: 45
+    days_critical: 30
+    http_response_status_code: 200
+    timeout: 60
+    disable_ssl_validation: false
+    tags:
+      - urlenv:poc
+      - urlproject:eks-istio
+      - urlrole:not-inject-envoy
+      - app:nginx
+  - name: not-inject-envoy-grpc-proxy
+    url: https://not-inject-envoy.poc.dmmga.me/hostname
+    check_certificate_expiration: true
+    days_warning: 45
+    days_critical: 30
+    http_response_status_code: 200
+    timeout: 60
+    disable_ssl_validation: false
+    tags:
+      - urlenv:poc
+      - urlproject:eks-istio
+      - urlrole:not-inject-envoy
+      - app:golang
+  - name: inject-envoy-nginx
+    url: https://inject-envoy.poc.dmmga.me/
+    check_certificate_expiration: true
+    days_warning: 45
+    days_critical: 30
+    http_response_status_code: 200
+    timeout: 60
+    disable_ssl_validation: false
+    tags:
+      - urlenv:poc
+      - urlproject:eks-istio
+      - urlrole:inject-envoy
+      - app:nginx
+  - name: inject-envoy-grpc-proxy
+    url: https://inject-envoy.poc.dmmga.me/hostname
+    check_certificate_expiration: true
+    days_warning: 45
+    days_critical: 30
+    http_response_status_code: 200
+    timeout: 60
+    disable_ssl_validation: false
+    tags:
+      - urlenv:poc
+      - urlproject:eks-istio
+      - urlrole:not-inject-envoy
+      - app:golang
+  - name: use-istio-ingressgw-nginx
+    url: https://nginx-use-istio-ingressgw.poc.dmmga.me/
+    check_certificate_expiration: true
+    days_warning: 45
+    days_critical: 30
+    http_response_status_code: 200
+    timeout: 60
+    disable_ssl_validation: false
+    tags:
+      - urlenv:poc
+      - urlproject:eks-istio
+      - urlrole:use-istio-ingressgw.
+      - app:nginx
+  - name: use-istio-ingressgw.-grpc-proxy
+    url: https://use-istio-ingressgw.poc.dmmga.me/hostname
+    check_certificate_expiration: true
+    days_warning: 45
+    days_critical: 30
+    http_response_status_code: 200
+    timeout: 60
+    disable_ssl_validation: false
+    tags:
+      - urlenv:poc
+      - urlproject:eks-istio
+      - urlrole:use-istio-ingressgw.poc.dmmga.me/
+      - app:golang
