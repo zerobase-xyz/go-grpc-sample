@@ -10,9 +10,8 @@ import (
 	pb "github.com/zerobase-xyz/go-grpc-sample/pb"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	health "google.golang.org/grpc/health/grpc_health_v1"
-	"google.golang.org/grpc/status"
+	grpctrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/google.golang.org/grpc"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 var (
@@ -20,18 +19,6 @@ var (
 )
 
 type HostnameService struct{}
-
-type healthServer struct{}
-
-func (h *healthServer) Check(context.Context, *health.HealthCheckRequest) (*health.HealthCheckResponse, error) {
-	return &health.HealthCheckResponse{
-		Status: health.HealthCheckResponse_SERVING,
-	}, nil
-}
-
-func (h *healthServer) Watch(*health.HealthCheckRequest, health.Health_WatchServer) error {
-	return status.Error(codes.Unimplemented, "service watch is not implemented current version.")
-}
 
 func factorize(number int) {
 	var a []int
@@ -54,13 +41,21 @@ func (s *HostnameService) GetPodHostname(ctx context.Context, in *pb.Empty) (*pb
 }
 
 func main() {
+	addr := net.JoinHostPort(
+		os.Getenv("DD_AGENT_HOST"),
+		os.Getenv("DD_TRACE_AGENT_PORT"),
+	)
+	tracer.Start(tracer.WithAnalytics(true), tracer.WithAgentAddr(addr), tracer.WithGlobalTag("env", "dev"))
+	defer tracer.Stop()
+	si := grpctrace.StreamServerInterceptor()
+	ui := grpctrace.UnaryServerInterceptor()
+
 	listenPort, err := net.Listen("tcp", ":8080")
 	if err != nil {
 		log.Fatalln(err)
 	}
-	server := grpc.NewServer()
+	server := grpc.NewServer(grpc.StreamInterceptor(si), grpc.UnaryInterceptor(ui))
 	HostnameService := &HostnameService{}
 	pb.RegisterHostnamePodServiceServer(server, HostnameService)
-	health.RegisterHealthServer(server, &healthServer{})
 	server.Serve(listenPort)
 }
